@@ -1,10 +1,19 @@
 name: Android CI
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
   workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（如 0.1.0），相同版本号会覆盖旧的构建产物'
+        required: true
+        default: '0.1.0'
+      delete_token:
+        description: '可选：用于删除旧版本产物的 PAT（需 actions:write 权限），留空则旧产物保留'
+        required: false
+        default: ''
+
+env:
+  APP_VERSION: ${{ inputs.version }}
 
 jobs:
   build:
@@ -17,7 +26,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # 安装 Gradle 并生成 wrapper（wrapper jar 不进 git，由 CI 现场生成）
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -29,12 +37,25 @@ jobs:
       - name: Build core engine module
         run: ./gradlew :core:build
 
-      - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug
+      - name: Assemble debug APK (version=${{ inputs.version }})
+        run: ./gradlew :app:assembleDebug -PappVersionName=$APP_VERSION
+
+      - name: Rename APK with version
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk              app/build/outputs/apk/debug/regman-v$APP_VERSION.apk
+
+      # 相同版本号 → 先删除旧的同名产物，再上传，实现"覆盖"
+      - name: Delete previous artifact with same version
+        if: ${{ inputs.delete_token != '' }}
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: regman-v${{ inputs.version }}.apk
+          token: ${{ inputs.delete_token }}
+          failOnError: false
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: regman-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          retention-days: 14
+          name: regman-v${{ inputs.version }}.apk
+          path: app/build/outputs/apk/debug/regman-v${{ inputs.version }}.apk
+          retention-days: 30

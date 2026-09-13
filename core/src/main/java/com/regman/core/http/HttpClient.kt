@@ -17,9 +17,9 @@ interface HttpClient {
 data class ClientFingerprint(
     val userAgent: String,
     val acceptLanguage: String = "zh-CN,zh;q=0.9,en;q=0.8",
-    val secChUa: String = """"Chromium";v="119", "Google Chrome";v="119", "Not?A_Brand";v="24"""",
+    val secChUa: String = "\"Chromium\";v=\"119\", \"Google Chrome\";v=\"119\", \"Not?A_Brand\";v=\"24\"",
     val secChUaMobile: String = "?0",
-    val secChUaPlatform: String = ""Windows"",
+    val secChUaPlatform: String = "\"Windows\"",
 ) {
     fun headers(): Map<String, String> = mapOf(
         "User-Agent" to userAgent,

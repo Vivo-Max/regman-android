@@ -4,7 +4,7 @@ import com.regman.core.engine.AccountDraft
 import com.regman.core.engine.RegisterContext
 import com.regman.core.engine.RegisterResult
 
-interface Quota(val total: Long, val used: Long)
+data class Quota(val total: Long, val used: Long)
 
 data class QuotaInfo(val plan: String, val quotas: List<Pair<String, Quota>>, val expiresAtMillis: Long)
 

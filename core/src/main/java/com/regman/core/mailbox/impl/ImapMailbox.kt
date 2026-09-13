@@ -42,7 +42,7 @@ class ImapMailbox(
                     inbox.getMessageCount().let { count ->
                         (count downTo 1).forEach { i ->
                             val m = inbox.getMessage(i)
-                            val id = m.messageID ?: return@forEach
+                            val id = m.getHeader("Message-ID")?.firstOrNull() ?: return@forEach
                             if (id !in seen) {
                                 seen += id
                                 (extract(m.content.toString()))?.let { return@withContext it }

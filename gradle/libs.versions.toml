@@ -51,3 +51,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.24" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version = "1.2.0" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version = "1.2.0" }

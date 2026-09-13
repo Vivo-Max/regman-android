@@ -39,8 +39,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.sqlcipher)   // SQLCipher 替代默认 SQLite
     implementation(libs.androidx.workmanager)
+    implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.datastore)
     implementation(libs.cronet.embedded)
     implementation(libs.kotlinx.coroutines.android)

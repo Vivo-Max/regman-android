@@ -50,7 +50,7 @@ class KiroPlatform(
         // ── 步骤 3-4: 设备授权 [RFC 8628，标准实现] ──
         log("3/15", "设备授权")
         val device = runCatching { deviceAuthorize(http, cfg, clientId) }.getOrNull()
-        if (device.isNull()) log("3/15", "设备授权未返回（非致命，继续）")
+        if (device == null) log("3/15", "设备授权未返回（非致命，继续）")
 
         // ── 步骤 5: hCaptcha ──
         var hcaptchaToken: String? = null

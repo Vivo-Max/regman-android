@@ -31,6 +31,8 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-workmanager = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }
 androidx-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version = "1.2.0" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version = "1.2.0" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 cronet-embedded = { module = "org.chromium.net:cronet-embedded", version.ref = "cronet" }
@@ -52,4 +54,3 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.24" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version = "1.2.0" }
-androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version = "1.2.0" }

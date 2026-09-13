@@ -1,0 +1,40 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 安装 Gradle 并生成 wrapper（wrapper jar 不进 git，由 CI 现场生成）
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+
+      - name: Generate wrapper
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: Build core engine module
+        run: ./gradlew :core:build
+
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: regman-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14

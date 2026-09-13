@@ -1,0 +1,20 @@
+{
+  "_comment": "内置兜底配置。[PUBLIC]=公开项目已确认可直接用；[CAPTURE]=需对照 KiroX 源码/抓包补全。远端热更新地址优先。",
+  "oidcIssuer": "",
+  "oidcRegistrationUrl": "",
+  "deviceAuthorizationUrl": "",
+  "tokenUrl": "",
+  "awsAuthorizeUrl": "",
+  "createIdentityUrl": "",
+  "socialAuthorizeUrl": "https://prod.us-east-1.auth.desktop.kiro.dev/login",
+  "socialTokenUrl": "https://prod.us-east-1.auth.desktop.kiro.dev/oauth/token",
+  "socialRefreshUrl": "https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken",
+  "socialRedirectUri": "kiro://kiro.kiroAgent/authenticate-success",
+  "socialPortalUrl": "https://app.kiro.dev/signin",
+  "kiroClientName": "kiro-oauth-client",
+  "kiroScopes": "codewhisperer:completions codewhisperer:analysis codewhisperer:conversations",
+  "hcaptchaSiteKey": "",
+  "apiBase": "",
+  "trialActivateUrl": "",
+  "quotaQueryUrl": ""
+}

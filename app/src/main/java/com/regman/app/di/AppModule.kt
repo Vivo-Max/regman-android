@@ -1,0 +1,96 @@
+package com.regman.app.di
+
+import android.content.Context
+import androidx.room.Room
+import com.regman.app.data.crypto.KeystoreAccountCipher
+import com.regman.app.data.db.AppDatabase
+import com.regman.app.data.http.CronetHttpClientFactory
+import com.regman.app.data.repo.AccountRepository
+import com.regman.app.data.repo.TaskRepository
+import com.regman.core.crypto.AccountCipher
+import com.regman.core.engine.DefaultRegisterOrchestrator
+import com.regman.core.engine.RegisterOrchestrator
+import com.regman.core.engine.RemoteConfig
+import com.regman.core.http.HttpClient
+import com.regman.core.mailbox.MailboxPool
+import com.regman.core.platform.PlatformRegistry
+import com.regman.core.platform.kiro.KiroConfigSource
+import com.regman.core.platform.kiro.KiroPlatform
+import com.regman.core.proxy.ProxyPool
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object AppModule {
+
+    @Provides @Singleton
+    fun scope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    @Provides @Singleton
+    fun cipher(): AccountCipher = KeystoreAccountCipher()
+
+    @Provides @Singleton
+    fun httpFactory(@ApplicationContext ctx: Context): CronetHttpClientFactory = CronetHttpClientFactory(ctx)
+
+    @Provides @Singleton
+    fun baseHttp(factory: CronetHttpClientFactory): HttpClient = factory.create(null)
+
+    @Provides @Singleton
+    fun proxyPool() = ProxyPool()
+
+    @Provides @Singleton
+    fun mailboxPool(): MailboxPool = MailboxPool(emptyList())   // TODO: 从数据库/设置页构建
+
+    @Provides @Singleton
+    fun kiroConfigSource(http: HttpClient): KiroConfigSource =
+        KiroConfigSource(RemoteConfig(http, KIRO_FALLBACK), KIRO_REMOTE_URL)
+
+    @Provides @Singleton @IntoSet
+    fun kiroPlatform(factory: CronetHttpClientFactory, cfg: KiroConfigSource): com.regman.core.platform.PlatformPlugin =
+        KiroPlatform({ proxy -> factory.create(proxy) }, cfg)
+
+    @Provides @Singleton
+    fun platformRegistry(plugins: Set<@JvmSuppressWildcards com.regman.core.platform.PlatformPlugin>) =
+        PlatformRegistry(plugins)
+
+    @Provides @Singleton
+    fun db(@ApplicationContext ctx: Context, cipher: AccountCipher): AppDatabase {
+        val passphrase = cipher.dbPassphrase()
+        SQLiteDatabase.loadLibs(ctx)
+        return Room.databaseBuilder(ctx, AppDatabase::class.java, "regman.db")
+            .openHelperFactory(SupportFactory(passphrase))
+            .build()
+    }
+
+    @Provides fun accountDao(db: AppDatabase) = db.accountDao()
+    @Provides fun taskDao(db: AppDatabase) = db.taskDao()
+
+    @Provides @Singleton
+    fun accountRepo(dao: com.regman.app.data.db.AccountDao, cipher: AccountCipher) = AccountRepository(dao, cipher)
+
+    @Provides @Singleton
+    fun taskRepo(dao: com.regman.app.data.db.TaskDao) = TaskRepository(dao)
+
+    @Provides @Singleton
+    fun orchestrator(scope: CoroutineScope, proxyPool: ProxyPool, repo: AccountRepository): RegisterOrchestrator =
+        DefaultRegisterOrchestrator(scope, proxyPool) { draft -> repo.saveDraft(draft) }
+
+    // TODO: 正式环境放到你自己的可写地址（Gist/对象存储）
+    private const val KIRO_REMOTE_URL = "https://example.com/regman/config/kiro.json"
+    private val KIRO_FALLBACK: String = """
+        {"oidcAuthorizeUrl":"","oidcTokenUrl":"","clientId":"","redirectUri":"",
+         "turnstileSiteKey":"","trialActivateUrl":"","quotaQueryUrl":"",
+         "scopes":"openid profile email"}
+    """.trimIndent()
+}

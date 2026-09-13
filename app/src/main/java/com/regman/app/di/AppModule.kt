@@ -26,8 +26,6 @@ import dagger.multibindings.IntoSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
 import javax.inject.Singleton
 
 @Module
@@ -38,7 +36,10 @@ object AppModule {
     fun scope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Provides @Singleton
-    fun cipher(): AccountCipher = KeystoreAccountCipher()
+    fun keystoreCipher(): KeystoreAccountCipher = KeystoreAccountCipher()
+
+    @Provides @Singleton
+    fun cipher(c: KeystoreAccountCipher): AccountCipher = c
 
     @Provides @Singleton
     fun httpFactory(@ApplicationContext ctx: Context): CronetHttpClientFactory = CronetHttpClientFactory(ctx)
@@ -65,13 +66,8 @@ object AppModule {
         PlatformRegistry(plugins)
 
     @Provides @Singleton
-    fun db(@ApplicationContext ctx: Context, cipher: AccountCipher): AppDatabase {
-        val passphrase = cipher.dbPassphrase()
-        SQLiteDatabase.loadLibs(ctx)
-        return Room.databaseBuilder(ctx, AppDatabase::class.java, "regman.db")
-            .openHelperFactory(SupportFactory(passphrase))
-            .build()
-    }
+    fun db(@ApplicationContext ctx: Context): AppDatabase =
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "regman.db").build()
 
     @Provides fun accountDao(db: AppDatabase) = db.accountDao()
     @Provides fun taskDao(db: AppDatabase) = db.taskDao()
@@ -89,8 +85,15 @@ object AppModule {
     // TODO: 正式环境放到你自己的可写地址（Gist/对象存储）
     private const val KIRO_REMOTE_URL = "https://example.com/regman/config/kiro.json"
     private val KIRO_FALLBACK: String = """
-        {"oidcAuthorizeUrl":"","oidcTokenUrl":"","clientId":"","redirectUri":"",
-         "turnstileSiteKey":"","trialActivateUrl":"","quotaQueryUrl":"",
-         "scopes":"openid profile email"}
+        {"oidcIssuer":"","oidcRegistrationUrl":"","deviceAuthorizationUrl":"","tokenUrl":"",
+         "awsAuthorizeUrl":"","createIdentityUrl":"",
+         "socialAuthorizeUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/login",
+         "socialTokenUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/oauth/token",
+         "socialRefreshUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken",
+         "socialRedirectUri":"kiro://kiro.kiroAgent/authenticate-success",
+         "socialPortalUrl":"https://app.kiro.dev/signin",
+         "kiroClientName":"kiro-oauth-client",
+         "kiroScopes":"codewhisperer:completions codewhisperer:analysis codewhisperer:conversations",
+         "hcaptchaSiteKey":"","apiBase":"","trialActivateUrl":"","quotaQueryUrl":""}
     """.trimIndent()
 }

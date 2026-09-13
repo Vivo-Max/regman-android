@@ -31,7 +31,7 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime)
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.androidx.compose.bom))   // Compose BOM：统一声明式库版本
     implementation(libs.bundles.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.hilt.android)
@@ -40,9 +40,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     ksp(libs.androidx.hilt.compiler)
-    implementation(libs.sqlcipher)   // SQLCipher 替代默认 SQLite
     implementation(libs.androidx.workmanager)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.hilt.navigation.compose)   // hiltViewModel()
     implementation(libs.androidx.datastore)
     implementation(libs.cronet.embedded)
     implementation(libs.kotlinx.coroutines.android)

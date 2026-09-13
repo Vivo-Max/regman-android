@@ -1,8 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# RegMan 一键推送 GitHub：自动建仓库 + 推送 + 触发云端编译
+# RegMan 一键推送 GitHub：自动建仓库 + 推送
 # 用法:
 #   ./push.sh <GitHub用户名> <Personal Access Token> [仓库名，默认 regman-android]
-# Token 获取: github.com → Settings → Developer settings → Tokens (classic) → 勾选 repo
 set -e
 
 USER="$1"; TOKEN="$2"; REPO="${3:-regman-android}"
@@ -41,6 +40,8 @@ if ! git push -u origin main; then
 fi
 
 echo
-echo "推送成功，云端编译已触发。5-10 分钟后:"
-echo "  https://github.com/${USER}/${REPO}/actions"
-echo "运行变绿后在 Artifacts 里下载 regman-debug-apk"
+echo "推送成功。"
+echo "当前工作流为【手动触发】，push 不会自动编译。"
+echo "请手动触发: https://github.com/${USER}/${REPO}/actions"
+echo "  → 选 Android CI → Run workflow → 填版本号(如 0.1.1) → Run"
+echo "编译完成后在 Artifacts 下载对应版本的 APK。"

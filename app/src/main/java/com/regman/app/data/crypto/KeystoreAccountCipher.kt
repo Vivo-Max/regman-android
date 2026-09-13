@@ -44,10 +44,4 @@ class KeystoreAccountCipher : AccountCipher {
         c.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
         return String(c.doFinal(body))
     }
-
-    /** SQLCipher 口令：用主密钥派生并持久化到私有目录（首次生成） */
-    fun dbPassphrase(): ByteArray {
-        // TODO: 用 DataStore 保存 Keystore 加密后的随机口令；此处返回固定长度随机字节
-        return ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
-    }
 }

@@ -1,17 +1,21 @@
 package com.regman.app.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.regman.app.service.RegisterService
 import com.regman.app.vm.RegisterViewModel
 
 @Composable
 fun RegisterScreen(vm: RegisterViewModel = hiltViewModel()) {
+    val ctx = LocalContext.current
     var platform by remember { mutableStateOf("kiro") }
     var count by remember { mutableStateOf("1") }
     var concurrency by remember { mutableStateOf("1") }
@@ -27,9 +31,16 @@ fun RegisterScreen(vm: RegisterViewModel = hiltViewModel()) {
         OutlinedTextField(concurrency, { concurrency = it.filter(Char::isDigit) }, label = { Text("并发数") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
         Button(
-            onClick = { vm.start(platform, count.toIntOrNull() ?: 1, concurrency.toIntOrNull() ?: 1) },
+            onClick = {
+                val i = Intent(ctx, RegisterService::class.java).apply {
+                    putExtra("platform", platform)
+                    putExtra("count", count.toIntOrNull() ?: 1)
+                    putExtra("concurrency", concurrency.toIntOrNull() ?: 1)
+                }
+                ctx.startForegroundService(i)
+            },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("开始注册") }
+        ) { Text("开始注册（前台任务）") }
         Spacer(Modifier.height(16.dp))
         tasks.forEach { t ->
             Text("${t.platform}: ${t.done}/${t.total} (成功 ${t.succeeded})")

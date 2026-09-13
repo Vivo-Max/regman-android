@@ -22,6 +22,7 @@ android {
     buildFeatures { compose = true }
     packaging {
         resources {
+            // jakarta.mail/activation 等库重复携带 META-INF 文件，打包时排除
             excludes += "META-INF/NOTICE.md"
             excludes += "META-INF/LICENSE.md"
             excludes += "META-INF/NOTICE"

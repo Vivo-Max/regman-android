@@ -5,6 +5,8 @@ import com.regman.core.proxy.ProxyEntry
 /** 注册主链路 HTTP 抽象。app 层提供 Cronet 实现（见 CronetHttpClient）。 */
 interface HttpClient {
     suspend fun getString(url: String, headers: Map<String, String> = emptyMap()): String
+    /** 返回 (响应体, 最终URL)。SSO 授权链的 code 在最终重定向 URL 上 */
+    suspend fun getStringWithUrl(url: String, headers: Map<String, String> = emptyMap()): Pair<String, String>
     suspend fun postJson(url: String, body: String, headers: Map<String, String> = emptyMap()): String
     suspend fun postForm(url: String, form: Map<String, String>, headers: Map<String, String> = emptyMap()): String
     fun withProxy(proxy: ProxyEntry): HttpClient
@@ -15,7 +17,7 @@ interface HttpClient {
  * 应用层头由本数据类驱动，可经 RemoteConfig 热更新。
  */
 data class ClientFingerprint(
-    val userAgent: String,
+    val userAgent: String = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
     val acceptLanguage: String = "zh-CN,zh;q=0.9,en;q=0.8",
     val secChUa: String = "\"Chromium\";v=\"119\", \"Google Chrome\";v=\"119\", \"Not?A_Brand\";v=\"24\"",
     val secChUaMobile: String = "?0",

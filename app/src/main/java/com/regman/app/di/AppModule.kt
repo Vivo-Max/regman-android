@@ -7,7 +7,9 @@ import com.regman.app.data.db.AppDatabase
 import com.regman.app.data.http.CronetHttpClientFactory
 import com.regman.app.data.repo.AccountRepository
 import com.regman.app.data.repo.TaskRepository
+import com.regman.app.data.settings.SettingsRepository
 import com.regman.core.crypto.AccountCipher
+import com.regman.core.engine.CaptchaHolder
 import com.regman.core.engine.DefaultRegisterOrchestrator
 import com.regman.core.engine.RegisterOrchestrator
 import com.regman.core.engine.RemoteConfig
@@ -26,6 +28,8 @@ import dagger.multibindings.IntoSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import javax.inject.Singleton
 
 @Module
@@ -42,6 +46,9 @@ object AppModule {
     fun cipher(c: KeystoreAccountCipher): AccountCipher = c
 
     @Provides @Singleton
+    fun captchaHolder() = CaptchaHolder()
+
+    @Provides @Singleton
     fun httpFactory(@ApplicationContext ctx: Context): CronetHttpClientFactory = CronetHttpClientFactory(ctx)
 
     @Provides @Singleton
@@ -51,11 +58,14 @@ object AppModule {
     fun proxyPool() = ProxyPool()
 
     @Provides @Singleton
-    fun mailboxPool(): MailboxPool = MailboxPool(emptyList())   // TODO: 从数据库/设置页构建
+    fun mailboxPool() = MailboxPool()
 
     @Provides @Singleton
-    fun kiroConfigSource(http: HttpClient): KiroConfigSource =
-        KiroConfigSource(RemoteConfig(http, KIRO_FALLBACK), KIRO_REMOTE_URL)
+    fun kiroConfigSource(http: HttpClient, settings: SettingsRepository): KiroConfigSource {
+        // 设置页配置的远端地址优先；未配置时用内置兜底
+        val url = runBlocking { settings.remoteConfigUrl.first() }.ifBlank { DEFAULT_REMOTE }
+        return KiroConfigSource(RemoteConfig(http, KIRO_FALLBACK), url)
+    }
 
     @Provides @Singleton @IntoSet
     fun kiroPlatform(factory: CronetHttpClientFactory, cfg: KiroConfigSource): com.regman.core.platform.PlatformPlugin =
@@ -71,22 +81,32 @@ object AppModule {
 
     @Provides fun accountDao(db: AppDatabase) = db.accountDao()
     @Provides fun taskDao(db: AppDatabase) = db.taskDao()
+    @Provides fun proxyDao(db: AppDatabase) = db.proxyDao()
+    @Provides fun mailboxDao(db: AppDatabase) = db.mailboxDao()
 
     @Provides @Singleton
-    fun accountRepo(dao: com.regman.app.data.db.AccountDao, cipher: AccountCipher) = AccountRepository(dao, cipher)
+    fun accountRepo(dao: com.regman.app.data.db.AccountDao, cipher: AccountCipher, registry: PlatformRegistry) =
+        AccountRepository(dao, cipher, registry)
 
     @Provides @Singleton
     fun taskRepo(dao: com.regman.app.data.db.TaskDao) = TaskRepository(dao)
 
     @Provides @Singleton
-    fun orchestrator(scope: CoroutineScope, proxyPool: ProxyPool, repo: AccountRepository): RegisterOrchestrator =
-        DefaultRegisterOrchestrator(scope, proxyPool) { draft -> repo.saveDraft(draft) }
+    fun orchestrator(
+        scope: CoroutineScope,
+        proxyPool: ProxyPool,
+        mailboxPool: MailboxPool,
+        captchaHolder: CaptchaHolder,
+        repo: AccountRepository,
+    ): RegisterOrchestrator =
+        DefaultRegisterOrchestrator(scope, proxyPool, mailboxPool, captchaHolder, onAccount = { repo.saveDraft(it) })
 
-    // TODO: 正式环境放到你自己的可写地址（Gist/对象存储）
-    private const val KIRO_REMOTE_URL = "https://example.com/regman/config/kiro.json"
+    // TODO: 换成你自己的可写地址（Gist/对象存储）
+    private const val DEFAULT_REMOTE = "https://example.com/regman/config/kiro.json"
     private val KIRO_FALLBACK: String = """
         {"oidcIssuer":"","oidcRegistrationUrl":"","deviceAuthorizationUrl":"","tokenUrl":"",
-         "awsAuthorizeUrl":"","createIdentityUrl":"",
+         "sendCodeUrl":"","verifyCodeUrl":"","setPasswordUrl":"",
+         "awsAuthorizeUrl":"","createIdentityUrl":"","awsClientIdArn":"","awsRequestUri":"","awsIdentityStoreId":"",
          "socialAuthorizeUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/login",
          "socialTokenUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/oauth/token",
          "socialRefreshUrl":"https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken",

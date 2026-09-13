@@ -52,18 +52,25 @@ class PoolSync @Inject constructor(
             proto, user, pass?.ifEmpty { null }, weight, consecutiveFails, disabled)
     }
 
-    private fun MailboxEntity.toProvider(): MailboxProvider = when (type) {
-        "IMAP" -> {
-            val c = json.parseToJsonElement(configJson).jsonObject
-            fun s(k: String) = c[k]?.jsonPrimitive?.content ?: ""
-            ImapMailbox(id, name, s("host"), s("port").toIntOrNull() ?: 993,
-                s("username"), s("password"), s("secure").ifEmpty { "true" }.toBooleanStrictOrNull() ?: true)
-        }
-        else -> {
-            val c = json.parseToJsonElement(configJson).jsonObject
-            fun s(k: String) = c[k]?.jsonPrimitive?.content ?: ""
-            HttpApiMailbox(id, http, s("baseUrl"), s("createPath").ifEmpty { "/generate" },
-                s("messagesPath").ifEmpty { "/auth/{token}" })
+    private fun MailboxEntity.toProvider(): MailboxProvider {
+        val c = json.parseToJsonElement(configJson).jsonObject
+        fun s(k: String) = c[k]?.jsonPrimitive?.content ?: ""
+        return when (type) {
+            "IMAP" -> ImapMailbox(
+                name = name,
+                host = s("host"),
+                port = s("port").toIntOrNull() ?: 993,
+                username = s("username"),
+                password = s("password"),
+                secure = s("secure").ifEmpty { "true" }.toBooleanStrictOrNull() ?: true,
+            )
+            else -> HttpApiMailbox(
+                name = name,
+                http = http,
+                baseUrl = s("baseUrl"),
+                createPath = s("createPath").ifEmpty { "/generate" },
+                messagesPath = s("messagesPath").ifEmpty { "/auth/{token}" },
+            )
         }
     }
 }
